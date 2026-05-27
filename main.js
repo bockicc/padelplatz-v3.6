@@ -26,10 +26,14 @@ document.addEventListener('DOMContentLoaded',function(){
   function selectLang(e){
     var lang = this.getAttribute('data-lang');
     if(!lang) return;
-    // Update active state in dropdown
-    langOptions.forEach(function(opt){
-      opt.classList.toggle('active', opt.getAttribute('data-lang') === lang);
-    });
+    // Apply translations (updates active state internally too)
+    if(typeof window.applyLang === 'function') window.applyLang(lang);
+    else {
+      // fallback: just update active class
+      langOptions.forEach(function(opt){
+        opt.classList.toggle('active', opt.getAttribute('data-lang') === lang);
+      });
+    }
     // Close menu
     langToggle.setAttribute('aria-expanded', 'false');
     langMenu.hidden = true;
@@ -652,13 +656,13 @@ window.showImageInfo=function(title,desc){
 // ========================= SHOP PRODUCT RENDERER =========================
 (function(){
   var PRODUCTS = [
-    { name:'Prime Pro Edition',       price:'39.900 RSD', img:'images/rackets/racket-prime-pro-1.webp',   badge:'pro',    link:'product-prime-pro.html',   alt:'Prime Pro Edition' },
-    { name:'Rialto Pro 2.0',          price:'39.900 RSD', img:'images/rackets/rialto-pro-1.webp',          badge:'pro',    link:'product-rialto-pro.html',  alt:'Rialto Pro 2.0' },
-    { name:'Rialto Pro Light 2.0',    price:'34.900 RSD', img:'images/rackets/rialto-pro-light-1.webp',    badge:'light',  link:'product-rialto-light.html',alt:'Rialto Pro Light 2.0' },
-     { name:'Prime Team Women\'s',     price:'23.900 RSD', img:'images/rackets/prime-team-women-1.webp',    badge:'womens', link:'product-prime-womens.html',alt:'Prime Team Women\'s' },
-     { name:'Cobra Women\'s',          price:'13.900 RSD', img:'images/rackets/cobra-women-1.webp',         badge:'womens', link:'product-cobra-womens.html',alt:'Cobra Women\'s' },
-     { name:'Nova Pro Edition',        price:'14.500 RSD', img:'images/rackets/nova-pro-side-1.webp',       badge:'value',  link:'product-nova-pro.html',    alt:'Nova Pro Edition' },
-     { name:'Cobra Apex Women\'s',     price:'15.000 RSD', img:'images/rackets/cobra-apex-1.webp',          badge:'womens', link:'product-cobra-apex.html',   alt:'Cobra Apex Women\'s' },
+    { name:'Prime Pro Edition',       priceRsd:39900, price:'39.900 RSD', img:'images/rackets/racket-prime-pro-1.webp',   badge:'pro',    link:'product-prime-pro.html',   alt:'Prime Pro Edition' },
+    { name:'Rialto Pro 2.0',          priceRsd:39900, price:'39.900 RSD', img:'images/rackets/rialto-pro-1.webp',          badge:'pro',    link:'product-rialto-pro.html',  alt:'Rialto Pro 2.0' },
+    { name:'Rialto Pro Light 2.0',    priceRsd:34900, price:'34.900 RSD', img:'images/rackets/rialto-pro-light-1.webp',    badge:'light',  link:'product-rialto-light.html',alt:'Rialto Pro Light 2.0' },
+    { name:'Prime Team Women\'s',     priceRsd:23900, price:'23.900 RSD', img:'images/rackets/prime-team-women-1.webp',    badge:'womens', link:'product-prime-womens.html',alt:'Prime Team Women\'s' },
+    { name:'Cobra Women\'s',          priceRsd:13900, price:'13.900 RSD', img:'images/rackets/cobra-women-1.webp',         badge:'womens', link:'product-cobra-womens.html',alt:'Cobra Women\'s' },
+    { name:'Nova Pro Edition',        priceRsd:14500, price:'14.500 RSD', img:'images/rackets/nova-pro-side-1.webp',       badge:'value',  link:'product-nova-pro.html',    alt:'Nova Pro Edition' },
+    { name:'Cobra Apex Women\'s',     priceRsd:15000, price:'15.000 RSD', img:'images/rackets/cobra-apex-1.webp',          badge:'womens', link:'product-cobra-apex.html',  alt:'Cobra Apex Women\'s' },
   ];
   function makeCard(p){
     if(p._phantom){                       // grid spacer – invisible but takes a slot
@@ -677,9 +681,9 @@ window.showImageInfo=function(title,desc){
         '<img src="' + p.img + '" alt="' + p.alt + '" loading="lazy" width="400" height="600">' +
       '</div>' +
       '<div class="product-name">' + p.name + '</div>' +
-      '<div class="product-price">' + p.price + '</div>' +
+      '<div class="product-price" data-price-rsd="' + p.priceRsd + '">' + p.price + '</div>' +
       '<span class="product-detail-btn">Detaljnije&ensp;<i class="fas fa-arrow-right"></i></span>' +
-      '<button class="product-buy-btn" data-name="' + p.name + '" data-price="' + p.price + '"><i class="fas fa-cart-plus"></i> Kupi</button>';
+      '<button class="product-buy-btn" data-name="' + p.name + '" data-price="' + p.price + '" data-price-rsd="' + p.priceRsd + '"><i class="fas fa-cart-plus"></i> Kupi</button>';
     var toast = document.createElement('span');
     toast.className = 'cart-toast';
     toast.textContent = 'Dodato u korpu ✓';
@@ -758,6 +762,12 @@ function updateCartUI(){
       var card = makeCard(displayList[i]);
       if(displayList[i]._phantom) card.style.visibility = 'hidden';
       container.appendChild(card);
+    }
+    // Apply current language prices to the freshly rendered cards
+    if(typeof window.PPTZ_applyPrices === 'function'){
+      var lang;
+      try { lang = localStorage.getItem('pptz_lang'); } catch(e){}
+      window.PPTZ_applyPrices(lang || 'sr');
     }
   }
 
